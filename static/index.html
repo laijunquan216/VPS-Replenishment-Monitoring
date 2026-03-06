@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VPS 补货监控面板</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>VPS 补货监控面板</h1>
+      <p class="hint">支持多站点规则、面板内配置监控规则和 SMTP 邮件。</p>
+      <div class="toolbar">
+        <button id="startBtn">开始轮询</button>
+        <button id="stopBtn">停止轮询</button>
+        <button id="checkBtn">立即检测</button>
+        <button id="reloadBtn">重载配置</button>
+      </div>
+      <section>
+        <h2>当前状态</h2>
+        <div id="meta"></div>
+      </section>
+      <section>
+        <h2>检测结果</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>站点</th><th>产品</th><th>状态</th><th>原因</th><th>时间</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </section>
+      <section>
+        <h2>面板配置（监控规则 + 邮件通知）</h2>
+        <div class="cfg-grid">
+          <label>轮询间隔(秒)<input id="intervalInput" type="number" min="5" /></label>
+          <label>SMTP 启用<select id="smtpEnabled"><option value="true">true</option><option value="false">false</option></select></label>
+          <label>SMTP Host<input id="smtpHost" type="text" /></label>
+          <label>SMTP Port<input id="smtpPort" type="number" /></label>
+          <label>SMTP 用户名<input id="smtpUser" type="text" /></label>
+          <label>SMTP 密码<input id="smtpPassword" type="password" /></label>
+          <label>发件邮箱<input id="smtpFrom" type="text" /></label>
+          <label>收件邮箱<input id="smtpTo" type="text" /></label>
+        </div>
+        <label class="block">监控规则(JSON 数组)</label>
+        <textarea id="rulesText" rows="14"></textarea>
+        <div class="toolbar">
+          <button id="saveConfigBtn">保存配置</button>
+        </div>
+        <div id="saveMsg" class="hint"></div>
+      </section>
+      <section>
+        <h2>最近错误</h2>
+        <pre id="errors">暂无</pre>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>
