@@ -14,7 +14,7 @@
 ### 1) 获取代码
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/laijunquan216/VPS-Replenishment-Monitoring.git
 cd VPS-Replenishment-Monitoring
 ```
 
