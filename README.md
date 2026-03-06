@@ -5,7 +5,7 @@
 - 多站点规则（通过 `product_anchor + keywords` 适配不同 VPS 页面结构）
 - 精准监控指定套餐（例如 `US.LA.TRI.Basic`）
 - 补货时邮件通知（状态从缺货 -> 有货时触发）
-- Web 可视化面板（查看实时状态、错误日志、手动检测）
+- Web 可视化面板（查看实时状态、错误日志、手动检测、在线改配置）
 
 ## 安装流程（推荐）
 
@@ -40,58 +40,60 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-### 4) 配置监控规则
-
-项目默认使用 `config.json`，你只需要按需修改：
-
-- `interval_seconds`：轮询间隔（秒）
-- `rules[]`：每个站点一条规则
-  - `site_name`：站点名称（展示用）
-  - `url`：监控页面地址
-  - `product_name`：套餐名称（展示用）
-  - `product_anchor`：用于定位套餐区块的锚点文本（建议与套餐标题一致）
-  - `unavailable_tokens`：缺货关键词
-  - `available_tokens`：有货关键词
-
-示例已内置：
-
-- VMISS：`US.LA.TRI.Basic`
-- MadcityServers：`New York Amd Ryzen Standard`
-
-### 5) 配置邮件通知（可选）
-
-在 `config.json` 中将 SMTP 打开：
-
-```json
-"smtp": {
-  "enabled": true,
-  "host": "smtp.example.com",
-  "port": 587,
-  "username": "your_user",
-  "password": "your_password_or_app_token",
-  "from_email": "alert@example.com",
-  "to_email": "you@example.com",
-  "use_tls": true
-}
-```
-
-> 建议使用邮箱的应用专用密码（App Password），不要使用主密码。
-
-### 6) 启动服务
+### 4) 启动服务
 
 ```bash
 python -m app.server
 ```
 
-启动后打开：`http://localhost:8080`
+默认端口：`8899`（可通过环境变量修改）：
 
-### 7) 面板操作
+```bash
+PORT=9000 python -m app.server
+```
+
+打开：`http://localhost:8899`
+
+### 5) 在 WebUI 配置规则和邮件通知
+
+进入面板后，在 **“面板配置（监控规则 + 邮件通知）”** 区域直接修改并保存：
+
+- `interval_seconds`（轮询间隔）
+- `rules`（监控规则 JSON 数组）
+- SMTP（启用、host、port、用户名、密码、收发件邮箱）
+
+保存后立即生效（服务端会进行字段校验，异常会在页面提示）。
+
+### 6) 面板操作
 
 - 点击“立即检测”做一次手动检查
 - 点击“开始轮询”进入自动监控
 - 检测到从缺货 -> 有货时会触发邮件通知（仅状态变化时触发）
 
 ---
+
+## 面板更新流程（升级到最新版本）
+
+### 方式 A：直接在服务器上更新
+
+```bash
+cd VPS-Replenishment-Monitoring
+git pull
+```
+
+如果你使用 systemd/pm2/supervisor，请重启服务让新代码生效。
+
+### 方式 B：本地修改后发布
+
+```bash
+git add .
+git commit -m "feat: your update"
+git push
+```
+
+然后在部署机器执行 `git pull` + 重启进程。
+
+> 更新前建议备份 `config.json`（如果你不只在 WebUI 管理配置）。
 
 ## 精准识别建议
 
@@ -103,6 +105,8 @@ python -m app.server
 ## API
 
 - `GET /api/status`
+- `GET /api/config`
+- `POST /api/config`
 - `POST /api/start`
 - `POST /api/stop`
 - `POST /api/check-now`

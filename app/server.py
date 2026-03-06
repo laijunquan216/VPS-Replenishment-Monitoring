@@ -23,6 +23,13 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(raw)
 
+    def _read_json_body(self) -> dict:
+        length = int(self.headers.get("Content-Length", "0"))
+        if length <= 0:
+            return {}
+        data = self.rfile.read(length).decode("utf-8")
+        return json.loads(data)
+
     def _serve_file(self, filename: str, content_type: str) -> None:
         path = STATIC_DIR / filename
         if not path.exists():
@@ -49,32 +56,45 @@ class Handler(BaseHTTPRequestHandler):
         if route == "/api/status":
             self._json(monitor.status())
             return
+        if route == "/api/config":
+            self._json({"ok": True, "config": monitor.get_config(mask_sensitive=False)})
+            return
         self.send_error(404)
 
     def do_POST(self):  # noqa: N802
         route = urlparse(self.path).path
-        if route == "/api/start":
-            monitor.start()
-            self._json({"ok": True, "running": True})
+        try:
+            if route == "/api/start":
+                monitor.start()
+                self._json({"ok": True, "running": True})
+                return
+            if route == "/api/stop":
+                monitor.stop()
+                self._json({"ok": True, "running": False})
+                return
+            if route == "/api/check-now":
+                results = [r.__dict__ for r in monitor.check_once()]
+                self._json({"ok": True, "results": results})
+                return
+            if route == "/api/reload":
+                monitor.reload_config()
+                self._json({"ok": True})
+                return
+            if route == "/api/config":
+                payload = self._read_json_body()
+                monitor.save_config(payload)
+                self._json({"ok": True})
+                return
+        except Exception as exc:  # pylint: disable=broad-except
+            self._json({"ok": False, "error": str(exc)}, 400)
             return
-        if route == "/api/stop":
-            monitor.stop()
-            self._json({"ok": True, "running": False})
-            return
-        if route == "/api/check-now":
-            results = [r.__dict__ for r in monitor.check_once()]
-            self._json({"ok": True, "results": results})
-            return
-        if route == "/api/reload":
-            monitor.reload_config()
-            self._json({"ok": True})
-            return
+
         self.send_error(404)
 
 
 def main() -> None:
     host = os.getenv("HOST", "0.0.0.0")
-    port = int(os.getenv("PORT", "8080"))
+    port = int(os.getenv("PORT", "8899"))
     server = ThreadingHTTPServer((host, port), Handler)
     print(f"VPS monitor dashboard running on http://{host}:{port}")
     try:

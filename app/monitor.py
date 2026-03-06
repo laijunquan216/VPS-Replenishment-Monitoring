@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, asdict
 from datetime import datetime
 import json
+from pathlib import Path
 import threading
 import time
 from typing import Any
@@ -24,28 +25,33 @@ class CheckResult:
 
 class MonitorService:
     def __init__(self, config_path: str = "config.json"):
-        self.config_path = config_path
+        self.config_path = Path(config_path)
         self._lock = threading.Lock()
         self._thread: threading.Thread | None = None
         self._running = False
         self._last_state: dict[str, bool] = {}
         self._results: list[CheckResult] = []
         self._errors: list[str] = []
+        self.raw_config: dict[str, Any] = {}
         self.reload_config()
 
-    def reload_config(self) -> None:
-        with open(self.config_path, "r", encoding="utf-8") as f:
-            config = json.load(f)
+    def _load_config_from_disk(self) -> dict[str, Any]:
+        with self.config_path.open("r", encoding="utf-8") as f:
+            return json.load(f)
 
-        self.interval_seconds = int(config.get("interval_seconds", 60))
-        self.user_agent = config.get("user_agent", "Mozilla/5.0 VPS Monitor")
-        self.rules: list[DetectorRule] = [build_rule_from_dict(r) for r in config.get("rules", [])]
-        validate_rules(self.rules)
+    def _apply_config(self, config: dict[str, Any]) -> None:
+        interval = int(config.get("interval_seconds", 60))
+        if interval <= 0:
+            raise ValueError("interval_seconds 必须大于 0")
+
+        rules_raw = config.get("rules", [])
+        rules: list[DetectorRule] = [build_rule_from_dict(r) for r in rules_raw]
+        validate_rules(rules)
 
         smtp = config.get("smtp")
-        self.notifier = None
+        notifier = None
         if smtp and smtp.get("enabled"):
-            self.notifier = EmailNotifier(
+            notifier = EmailNotifier(
                 SmtpConfig(
                     host=smtp["host"],
                     port=int(smtp.get("port", 587)),
@@ -56,6 +62,26 @@ class MonitorService:
                     use_tls=bool(smtp.get("use_tls", True)),
                 )
             )
+
+        self.interval_seconds = interval
+        self.user_agent = config.get("user_agent", "Mozilla/5.0 VPS Monitor")
+        self.rules = rules
+        self.notifier = notifier
+        self.raw_config = config
+
+    def reload_config(self) -> None:
+        self._apply_config(self._load_config_from_disk())
+
+    def save_config(self, config: dict[str, Any]) -> None:
+        self._apply_config(config)
+        with self.config_path.open("w", encoding="utf-8") as f:
+            json.dump(config, f, ensure_ascii=False, indent=2)
+
+    def get_config(self, mask_sensitive: bool = True) -> dict[str, Any]:
+        config = json.loads(json.dumps(self.raw_config))
+        if mask_sensitive and config.get("smtp", {}).get("password"):
+            config["smtp"]["password"] = "******"
+        return config
 
     def _fetch_html(self, url: str) -> str:
         req = Request(url, headers={"User-Agent": self.user_agent})

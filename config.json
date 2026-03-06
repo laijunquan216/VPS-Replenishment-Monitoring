@@ -17,16 +17,34 @@
       "url": "https://vmiss.com/store/us-losangeles-tri",
       "product_name": "US.LA.TRI.Basic",
       "product_anchor": "US.LA.TRI.Basic",
-      "unavailable_tokens": ["0 available", "out of stock", "缺货", "0 可用"],
-      "available_tokens": ["order now", "available", "有货"]
+      "unavailable_tokens": [
+        "0 available",
+        "out of stock",
+        "缺货",
+        "0 可用"
+      ],
+      "available_tokens": [
+        "order now",
+        "available",
+        "有货"
+      ]
     },
     {
       "site_name": "MadcityServers",
       "url": "https://madcityservers.com/Amd-New-York",
       "product_name": "New York Amd Ryzen Standard",
       "product_anchor": "New York Amd Ryzen Standard",
-      "unavailable_tokens": ["缺货中", "0 可用", "out of stock"],
-      "available_tokens": ["order", "buy", "available", "有货"]
+      "unavailable_tokens": [
+        "缺货中",
+        "0 可用",
+        "out of stock"
+      ],
+      "available_tokens": [
+        "order",
+        "buy",
+        "available",
+        "有货"
+      ]
     }
   ]
 }
